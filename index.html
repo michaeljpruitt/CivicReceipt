@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>CivicReceipt – Auto Tax</title>
+  <title>CivicReceipt – 2024 slices</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root {
@@ -11,6 +11,8 @@
       --text: #e2e8f0;
       --muted: #94a3b8;
       --border: rgba(148, 163, 184, 0.15);
+      --accent: #22c55e;
+      --accent2: #2563eb;
     }
     body {
       background: radial-gradient(circle at top, #1f2937 0%, #0f172a 65%);
@@ -39,7 +41,7 @@
       color: var(--text); font-size: 0.9rem;
     }
     .category-list {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
       gap: 0.4rem 1.25rem; margin-top: 1.25rem; margin-bottom: 0.9rem;
     }
     .category-list label {
@@ -57,10 +59,12 @@
       border: 1px solid rgba(148, 163, 184, 0.12);
       border-radius: 0.6rem;
       padding: 0.6rem 0.7rem 0.7rem;
+      font-size: 0.8rem;
     }
-    .cat-box small { color: var(--muted); font-size: 0.7rem; }
+    .cat-box strong { display: block; margin-bottom: 0.15rem; }
+    .cat-box small { color: var(--muted); }
     button {
-      background: #2563eb; border: none; color: #fff; padding: 0.6rem 1.1rem;
+      background: var(--accent2); border: none; color: #fff; padding: 0.6rem 1.1rem;
       border-radius: 0.6rem; font-weight: 600; cursor: pointer; margin-top: 1rem;
     }
     button:hover { background: #1d4ed8; }
@@ -81,6 +85,19 @@
     }
     .totals-card small { color: var(--muted); }
     .totals-card .big { font-size: 1.05rem; font-weight: 700; }
+    .cum-wrap { margin-bottom: 1rem; }
+    .cum-label { display:flex; justify-content:space-between; gap:1rem; font-size:0.75rem; margin-bottom:0.35rem; }
+    .cum-bar {
+      background: rgba(148, 163, 184, 0.15);
+      border-radius: 999px;
+      height: 13px;
+      overflow: hidden;
+    }
+    .cum-fill {
+      height: 13px;
+      background: linear-gradient(90deg, #22c55e, #16a34a);
+      width: 0%;
+    }
     .result-list {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
@@ -102,7 +119,7 @@
 <body>
   <div class="container">
     <h1>CivicReceipt</h1>
-    <p class="subtitle">Enter income, pick filing status. We estimate your 2024 federal income tax, then show how much could map to each slice.</p>
+    <p class="subtitle">2024-ish federal shares baked in. You give income, it does the brackets, you pick slices.</p>
 
     <div class="grid">
       <div>
@@ -120,7 +137,7 @@
     </div>
 
     <h2 style="margin-top:1.2rem;font-size:1rem;">Select categories</h2>
-    <p class="subtitle" style="margin-bottom:0.4rem;">Check what you want to visualize. Each gets its own % of the budget.</p>
+    <p class="subtitle" style="margin-bottom:0.4rem;">These %'s are fixed. No edits.</p>
     <div class="category-list" id="categoryList"></div>
     <div class="cat-inputs" id="catInputs"></div>
 
@@ -132,25 +149,39 @@
         <div class="big" id="totalTaxes">$0.00</div>
         <small id="taxDetails" style="display:block;margin-top:0.3rem;"></small>
       </div>
+
+      <div class="cum-wrap">
+        <div class="cum-label">
+          <span>Selected categories total</span>
+          <span id="cumText">$0.00 (0%)</span>
+        </div>
+        <div class="cum-bar">
+          <div class="cum-fill" id="cumFill"></div>
+        </div>
+      </div>
+
       <div class="result-list" id="resultList"></div>
     </div>
   </div>
 
   <script>
-    // categories we decided on
+    // fixed categories with updated DHS/ICE
     const CATEGORIES = [
-      { id: "snap", name: "SNAP & Food Assistance", defaultPct: 2 },
-      { id: "healthcare", name: "Healthcare & Medicaid", defaultPct: 15 },
-      { id: "soldierpay", name: "Pay & Benefits for Soldiers", defaultPct: 5 },
-      { id: "weapons", name: "Weapons & Procurement", defaultPct: 8 },
-      { id: "infra", name: "Infrastructure & Transportation", defaultPct: 3 },
-      { id: "justice", name: "Law Enforcement & Justice", defaultPct: 2.5 },
-      { id: "env", name: "Environmental Protection", defaultPct: 1.5 },
-      { id: "foreign", name: "Foreign Aid & Diplomacy", defaultPct: 1 },
-      { id: "debt", name: "Interest on Debt", defaultPct: 13 },
-      { id: "subsidy", name: "Corporate Subsidies", defaultPct: 1.5 }
+      { id: "snap", name: "SNAP & Food Assistance", pct: 1.6 },
+      { id: "healthcare", name: "Healthcare & Medicaid", pct: 14.0 },
+      { id: "soldierpay", name: "Pay & Benefits for Soldiers", pct: 2.6 },
+      { id: "weapons", name: "Weapons & Procurement", pct: 4.2 },
+      { id: "infra", name: "Infrastructure & Transportation", pct: 2.0 },
+      { id: "justice", name: "Law Enforcement & Justice", pct: 0.6 },
+      { id: "homeland", name: "Homeland Security", pct: 1.4 },
+      { id: "ice", name: "ICE & Detention/Removal", pct: 0.15 },
+      { id: "env", name: "Environmental Protection", pct: 0.2 },
+      { id: "foreign", name: "Foreign Aid & Diplomacy", pct: 1.2 },
+      { id: "debt", name: "Interest on Debt", pct: 13.0 },
+      { id: "subsidy", name: "Corporate / Farm-style Subsidies", pct: 0.2 }
     ];
 
+    // 2024-ish brackets
     const IRS_2024 = {
       single: {
         deduction: 14600,
@@ -194,7 +225,10 @@
     const catInputs = document.getElementById("catInputs");
     const resultList = document.getElementById("resultList");
     const resultsBox = document.getElementById("results");
+    const cumFill = document.getElementById("cumFill");
+    const cumText = document.getElementById("cumText");
 
+    // render checkboxes
     CATEGORIES.forEach(cat => {
       const label = document.createElement("label");
       const cb = document.createElement("input");
@@ -207,15 +241,6 @@
       categoryList.appendChild(label);
     });
 
-    // pre-check a couple
-    ["snap", "soldierpay", "weapons"].forEach(id => {
-      const cb = [...categoryList.querySelectorAll("input[type=checkbox]")].find(c => c.value === id);
-      if (cb) {
-        cb.checked = true;
-        cb.dispatchEvent(new Event("change"));
-      }
-    });
-
     function onCategoryToggle(e) {
       const id = e.target.dataset.cat;
       const cat = CATEGORIES.find(c => c.id === id);
@@ -225,9 +250,8 @@
         box.className = "cat-box";
         box.id = "box-" + id;
         box.innerHTML = `
-          <label for="pct-${id}">${cat.name}</label>
-          <input type="number" id="pct-${id}" value="${cat.defaultPct}" min="0" max="100" step="0.1" />
-          <small>Percent of federal budget to map to this.</small>
+          <strong>${cat.name}</strong>
+          <small>Fixed at ${cat.pct}% of 2024 federal spending.</small>
         `;
         catInputs.appendChild(box);
       } else {
@@ -263,14 +287,13 @@
 
       document.getElementById("totalTaxes").textContent = fmtDollar(tax);
       document.getElementById("taxDetails").textContent =
-        `Gross: ${fmtDollar(income)} – Standard deduction: ${fmtDollar(deduction)} = Taxable: ${fmtDollar(taxable)}`;
+        `Gross: ${fmtDollar(income)} – Std deduction: ${fmtDollar(deduction)} → Taxable: ${fmtDollar(taxable)}`;
 
       const selected = [];
       CATEGORIES.forEach(cat => {
         const cb = categoryList.querySelector(`input[value="${cat.id}"]`);
         if (cb && cb.checked) {
-          const pct = Number(document.getElementById("pct-" + cat.id).value) || 0;
-          selected.push({ ...cat, pct });
+          selected.push(cat);
         }
       });
 
@@ -278,30 +301,51 @@
       if (selected.length === 0) {
         resultsBox.style.display = "block";
         resultList.innerHTML = "<p style='color:#94a3b8'>Select at least one category above.</p>";
+        cumFill.style.width = "0%";
+        cumText.textContent = "$0.00 (0%)";
         return;
       }
 
+      // per-category output
       const amounts = selected.map(s => tax * (s.pct / 100));
       const maxAmount = Math.max(...amounts, 1);
 
+      let cumulative = 0;
+
       selected.forEach((cat, idx) => {
         const amount = tax * (cat.pct / 100);
+        cumulative += amount;
         const width = (amount / maxAmount) * 100;
         const item = document.createElement("div");
         item.className = "result-item";
         item.innerHTML = `
           <div class="name">${cat.name}</div>
-          <small>${cat.pct}% of your estimated federal income tax</small>
+          <small>${cat.pct}% of federal budget</small>
           <div style="margin-top:0.25rem;font-weight:600;">${fmtDollar(amount)}</div>
           <div class="bar"><div class="bar-fill" style="width:${width}%;"></div></div>
         `;
         resultList.appendChild(item);
       });
 
+      // cumulative bar
+      const cumPctOfTax = (cumulative / tax) * 100;
+      cumFill.style.width = Math.min(100, cumPctOfTax) + "%";
+      cumText.textContent = `${fmtDollar(cumulative)} (${cumPctOfTax.toFixed(1)}% of your tax)`;
+
       resultsBox.style.display = "block";
     }
 
     document.getElementById("calcBtn").addEventListener("click", calculate);
+
+    // pre-check a few
+    ["snap","soldierpay","homeland","ice"].forEach(id => {
+      const cb = categoryList.querySelector(`input[value="${id}"]`);
+      if (cb) {
+        cb.checked = true;
+        cb.dispatchEvent(new Event("change"));
+      }
+    });
+
     calculate();
   </script>
 </body>
