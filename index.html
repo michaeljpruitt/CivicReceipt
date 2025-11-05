@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Tax Slice: SNAP vs Defense</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #111827;
+      --accent: #22c55e;
+      --accent2: #ef4444;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+    }
+    body {
+      background: radial-gradient(circle at top, #1f2937 0%, #0f172a 60%);
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      margin: 0;
+      padding: 2rem;
+      display: flex;
+      justify-content: center;
+    }
+    .container {
+      width: min(960px, 100%);
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid rgba(148, 163, 184, 0.15);
+      border-radius: 1rem;
+      padding: 1.5rem 1.75rem 2rem;
+      backdrop-filter: blur(4px);
+    }
+    h1 {
+      font-size: 1.4rem;
+      margin-bottom: 0.25rem;
+    }
+    p.subtitle {
+      color: var(--muted);
+      margin-top: 0;
+      margin-bottom: 1.5rem;
+      font-size: 0.9rem;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 1rem;
+    }
+    label {
+      display: block;
+      margin-bottom: 0.4rem;
+      font-weight: 500;
+    }
+    input[type="number"] {
+      width: 100%;
+      padding: 0.5rem 0.6rem;
+      border-radius: 0.5rem;
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      background: rgba(15, 23, 42, 0.3);
+      color: var(--text);
+      font-size: 0.9rem;
+    }
+    .inline-input {
+      display: flex;
+      gap: 0.4rem;
+      align-items: center;
+    }
+    .inline-input span {
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    button {
+      background: #2563eb;
+      border: none;
+      color: #fff;
+      padding: 0.6rem 1.1rem;
+      border-radius: 0.6rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 0.5rem;
+    }
+    button:hover {
+      background: #1d4ed8;
+    }
+    .results {
+      margin-top: 1.5rem;
+      background: rgba(15, 23, 42, 0.3);
+      border: 1px solid rgba(148, 163, 184, 0.15);
+      border-radius: 1rem;
+      padding: 1rem 1.25rem 1.25rem;
+    }
+    .result-row {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .card {
+      flex: 1 1 200px;
+      background: rgba(15, 23, 42, 0.4);
+      border: 1px solid rgba(148, 163, 184, 0.05);
+      border-radius: 0.75rem;
+      padding: 0.8rem 1rem 0.9rem;
+    }
+    .card small {
+      color: var(--muted);
+      display: block;
+      margin-bottom: 0.4rem;
+    }
+    .card .big {
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+    .bar-wrap {
+      margin-top: 1rem;
+      background: rgba(15, 23, 42, 0.1);
+      border-radius: 9999px;
+      height: 16px;
+      display: flex;
+      overflow: hidden;
+      border: 1px solid rgba(148, 163, 184, 0.1);
+    }
+    .bar-snap {
+      background: linear-gradient(90deg, #22c55e, #16a34a);
+      height: 100%;
+    }
+    .bar-defense {
+      background: linear-gradient(90deg, #ef4444, #b91c1c);
+      height: 100%;
+    }
+    .legend {
+      display: flex;
+      gap: 1rem;
+      margin-top: 0.5rem;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+    .legend span::before {
+      content: "";
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      margin-right: 0.3rem;
+    }
+    .legend .snap::before { background: #22c55e; }
+    .legend .defense::before { background: #ef4444; }
+
+    @media (max-width: 600px) {
+      body { padding: 1rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>SNAP vs Defense Tax Estimator</h1>
+    <p class="subtitle">
+      Pick your income, tell it your effective federal tax rate, and it will estimate how much of that tax slice maps to SNAP and to defense.
+    </p>
+
+    <div class="grid">
+      <div>
+        <label for="income">Annual income (USD)</label>
+        <input type="number" id="income" value="60000" min="0" step="500" />
+      </div>
+      <div>
+        <label for="effRate">Effective federal tax rate (%)</label>
+        <input type="number" id="effRate" value="12" min="0" max="60" step="0.1" />
+      </div>
+      <div>
+        <label for="snapShare">SNAP share of budget (%)</label>
+        <input type="number" id="snapShare" value="2" min="0" max="10" step="0.1" />
+      </div>
+      <div>
+        <label for="defShare">Defense share of budget (%)</label>
+        <input type="number" id="defShare" value="13" min="0" max="40" step="0.1" />
+      </div>
+    </div>
+
+    <button id="calcBtn">Calculate</button>
+
+    <div class="results" id="results" style="display:none;">
+      <div class="result-row">
+        <div class="card">
+          <small>Estimated federal taxes</small>
+          <div class="big" id="taxesOut">$0.00</div>
+        </div>
+        <div class="card">
+          <small>SNAP equivalent</small>
+          <div class="big" id="snapOut">$0.00</div>
+        </div>
+        <div class="card">
+          <small>Defense equivalent</small>
+          <div class="big" id="defOut">$0.00</div>
+        </div>
+        <div class="card" id="ratioCard" style="display:none;">
+          <small>Defense vs SNAP</small>
+          <div class="big" id="ratioOut">--</div>
+        </div>
+      </div>
+
+      <div class="bar-wrap" aria-label="visual comparison of amounts">
+        <div class="bar-snap" id="snapBar" style="width:20%;"></div>
+        <div class="bar-defense" id="defBar" style="width:80%;"></div>
+      </div>
+      <div class="legend">
+        <span class="snap">SNAP</span>
+        <span class="defense">Defense</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function fmt(num) {
+      return "$" + num.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    }
+
+    function calc() {
+      const income = Number(document.getElementById("income").value) || 0;
+      const effRate = Number(document.getElementById("effRate").value) || 0;
+      const snapSharePct = Number(document.getElementById("snapShare").value) || 0;
+      const defSharePct = Number(document.getElementById("defShare").value) || 0;
+
+      // estimated federal taxes paid
+      const taxes = income * (effRate / 100);
+      const snapAmt = taxes * (snapSharePct / 100);
+      const defAmt = taxes * (defSharePct / 100);
+
+      document.getElementById("taxesOut").textContent = fmt(taxes);
+      document.getElementById("snapOut").textContent = fmt(snapAmt);
+      document.getElementById("defOut").textContent = fmt(defAmt);
+
+      // ratio
+      const ratioCard = document.getElementById("ratioCard");
+      if (snapAmt > 0) {
+        const ratio = defAmt / snapAmt;
+        document.getElementById("ratioOut").textContent = ratio.toFixed(1) + "x";
+        ratioCard.style.display = "block";
+      } else {
+        ratioCard.style.display = "none";
+      }
+
+      // bar widths: normalize to max of the two
+      const maxVal = Math.max(snapAmt, defAmt, 1); // avoid 0
+      const snapWidth = (snapAmt / maxVal) * 100;
+      const defWidth = (defAmt / maxVal) * 100;
+      document.getElementById("snapBar").style.width = snapWidth + "%";
+      document.getElementById("defBar").style.width = defWidth + "%";
+
+      document.getElementById("results").style.display = "block";
+    }
+
+    document.getElementById("calcBtn").addEventListener("click", calc);
+
+    // run once on load
+    calc();
+  </script>
+</body>
+</html>
