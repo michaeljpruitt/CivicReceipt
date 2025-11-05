@@ -2,19 +2,18 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Tax Slice: SNAP vs Defense</title>
+  <title>CivicReceipt – Auto Tax</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root {
       --bg: #0f172a;
       --panel: #111827;
-      --accent: #22c55e;
-      --accent2: #ef4444;
       --text: #e2e8f0;
       --muted: #94a3b8;
+      --border: rgba(148, 163, 184, 0.15);
     }
     body {
-      background: radial-gradient(circle at top, #1f2937 0%, #0f172a 60%);
+      background: radial-gradient(circle at top, #1f2937 0%, #0f172a 65%);
       color: var(--text);
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       margin: 0;
@@ -23,235 +22,287 @@
       justify-content: center;
     }
     .container {
-      width: min(960px, 100%);
-      background: rgba(15, 23, 42, 0.7);
-      border: 1px solid rgba(148, 163, 184, 0.15);
+      width: min(1000px, 100%);
+      background: rgba(15, 23, 42, 0.75);
+      border: 1px solid var(--border);
       border-radius: 1rem;
       padding: 1.5rem 1.75rem 2rem;
       backdrop-filter: blur(4px);
     }
-    h1 {
-      font-size: 1.4rem;
-      margin-bottom: 0.25rem;
+    h1 { font-size: 1.35rem; margin-bottom: 0.25rem; }
+    p.subtitle { color: var(--muted); margin-top: 0; margin-bottom: 1.25rem; font-size: 0.9rem; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
+    label { display: block; margin-bottom: 0.4rem; font-weight: 500; }
+    input[type="number"], select {
+      width: 100%; padding: 0.5rem 0.6rem; border-radius: 0.5rem;
+      border: 1px solid rgba(148, 163, 184, 0.2); background: rgba(15, 23, 42, 0.3);
+      color: var(--text); font-size: 0.9rem;
     }
-    p.subtitle {
-      color: var(--muted);
-      margin-top: 0;
-      margin-bottom: 1.5rem;
-      font-size: 0.9rem;
+    .category-list {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 0.4rem 1.25rem; margin-top: 1.25rem; margin-bottom: 0.9rem;
     }
-    .grid {
+    .category-list label {
+      display: flex; align-items: center; gap: 0.35rem; font-weight: 400;
+      cursor: pointer; color: var(--text);
+    }
+    .cat-inputs {
+      margin-top: 1rem;
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-      gap: 1rem;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 0.75rem;
     }
-    label {
-      display: block;
-      margin-bottom: 0.4rem;
-      font-weight: 500;
-    }
-    input[type="number"] {
-      width: 100%;
-      padding: 0.5rem 0.6rem;
-      border-radius: 0.5rem;
-      border: 1px solid rgba(148, 163, 184, 0.2);
-      background: rgba(15, 23, 42, 0.3);
-      color: var(--text);
-      font-size: 0.9rem;
-    }
-    .inline-input {
-      display: flex;
-      gap: 0.4rem;
-      align-items: center;
-    }
-    .inline-input span {
-      font-size: 0.8rem;
-      color: var(--muted);
-    }
-    button {
-      background: #2563eb;
-      border: none;
-      color: #fff;
-      padding: 0.6rem 1.1rem;
+    .cat-box {
+      background: rgba(15, 23, 42, 0.35);
+      border: 1px solid rgba(148, 163, 184, 0.12);
       border-radius: 0.6rem;
-      font-weight: 600;
-      cursor: pointer;
-      margin-top: 0.5rem;
+      padding: 0.6rem 0.7rem 0.7rem;
     }
-    button:hover {
-      background: #1d4ed8;
+    .cat-box small { color: var(--muted); font-size: 0.7rem; }
+    button {
+      background: #2563eb; border: none; color: #fff; padding: 0.6rem 1.1rem;
+      border-radius: 0.6rem; font-weight: 600; cursor: pointer; margin-top: 1rem;
     }
+    button:hover { background: #1d4ed8; }
     .results {
-      margin-top: 1.5rem;
-      background: rgba(15, 23, 42, 0.3);
+      margin-top: 1.4rem;
+      background: rgba(15, 23, 42, 0.35);
       border: 1px solid rgba(148, 163, 184, 0.15);
       border-radius: 1rem;
-      padding: 1rem 1.25rem 1.25rem;
+      padding: 1rem 1.1rem 1.25rem;
     }
-    .result-row {
-      display: flex;
-      gap: 1rem;
-      flex-wrap: wrap;
-    }
-    .card {
-      flex: 1 1 200px;
-      background: rgba(15, 23, 42, 0.4);
+    .totals-card {
+      background: rgba(15, 23, 42, 0.35);
       border: 1px solid rgba(148, 163, 184, 0.05);
-      border-radius: 0.75rem;
-      padding: 0.8rem 1rem 0.9rem;
+      border-radius: 0.6rem;
+      padding: 0.5rem 0.7rem 0.6rem;
+      min-width: 180px;
+      margin-bottom: 1rem;
     }
-    .card small {
-      color: var(--muted);
-      display: block;
-      margin-bottom: 0.4rem;
+    .totals-card small { color: var(--muted); }
+    .totals-card .big { font-size: 1.05rem; font-weight: 700; }
+    .result-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 0.6rem;
     }
-    .card .big {
-      font-size: 1.1rem;
-      font-weight: 700;
+    .result-item {
+      background: rgba(15, 23, 42, 0.25);
+      border: 1px solid rgba(148, 163, 184, 0.05);
+      border-radius: 0.5rem;
+      padding: 0.4rem 0.5rem 0.6rem;
     }
-    .bar-wrap {
-      margin-top: 1rem;
-      background: rgba(15, 23, 42, 0.1);
-      border-radius: 9999px;
-      height: 16px;
-      display: flex;
-      overflow: hidden;
-      border: 1px solid rgba(148, 163, 184, 0.1);
-    }
-    .bar-snap {
-      background: linear-gradient(90deg, #22c55e, #16a34a);
-      height: 100%;
-    }
-    .bar-defense {
-      background: linear-gradient(90deg, #ef4444, #b91c1c);
-      height: 100%;
-    }
-    .legend {
-      display: flex;
-      gap: 1rem;
-      margin-top: 0.5rem;
-      font-size: 0.75rem;
-      color: var(--muted);
-    }
-    .legend span::before {
-      content: "";
-      display: inline-block;
-      width: 10px;
-      height: 10px;
-      border-radius: 999px;
-      margin-right: 0.3rem;
-    }
-    .legend .snap::before { background: #22c55e; }
-    .legend .defense::before { background: #ef4444; }
-
-    @media (max-width: 600px) {
-      body { padding: 1rem; }
-    }
+    .result-item small { color: var(--muted); font-size: 0.65rem; }
+    .result-item .name { font-weight: 600; margin-bottom: 0.2rem; }
+    .bar { background: rgba(148, 163, 184, 0.15); border-radius: 999px; height: 10px; overflow: hidden; margin-top: 0.35rem; }
+    .bar-fill { height: 10px; background: linear-gradient(90deg, #22c55e, #16a34a); width: 0%; }
+    @media (max-width: 600px) { body { padding: 1rem; } }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>SNAP vs Defense Tax Estimator</h1>
-    <p class="subtitle">
-      Pick your income, tell it your effective federal tax rate, and it will estimate how much of that tax slice maps to SNAP and to defense.
-    </p>
+    <h1>CivicReceipt</h1>
+    <p class="subtitle">Enter income, pick filing status. We estimate your 2024 federal income tax, then show how much could map to each slice.</p>
 
     <div class="grid">
       <div>
         <label for="income">Annual income (USD)</label>
-        <input type="number" id="income" value="60000" min="0" step="500" />
+        <input type="number" id="income" value="56000" min="0" step="500" />
       </div>
       <div>
-        <label for="effRate">Effective federal tax rate (%)</label>
-        <input type="number" id="effRate" value="12" min="0" max="60" step="0.1" />
-      </div>
-      <div>
-        <label for="snapShare">SNAP share of budget (%)</label>
-        <input type="number" id="snapShare" value="2" min="0" max="10" step="0.1" />
-      </div>
-      <div>
-        <label for="defShare">Defense share of budget (%)</label>
-        <input type="number" id="defShare" value="13" min="0" max="40" step="0.1" />
+        <label for="status">Filing status</label>
+        <select id="status">
+          <option value="single">Single</option>
+          <option value="married">Married filing jointly</option>
+          <option value="hoh">Head of household</option>
+        </select>
       </div>
     </div>
+
+    <h2 style="margin-top:1.2rem;font-size:1rem;">Select categories</h2>
+    <p class="subtitle" style="margin-bottom:0.4rem;">Check what you want to visualize. Each gets its own % of the budget.</p>
+    <div class="category-list" id="categoryList"></div>
+    <div class="cat-inputs" id="catInputs"></div>
 
     <button id="calcBtn">Calculate</button>
 
     <div class="results" id="results" style="display:none;">
-      <div class="result-row">
-        <div class="card">
-          <small>Estimated federal taxes</small>
-          <div class="big" id="taxesOut">$0.00</div>
-        </div>
-        <div class="card">
-          <small>SNAP equivalent</small>
-          <div class="big" id="snapOut">$0.00</div>
-        </div>
-        <div class="card">
-          <small>Defense equivalent</small>
-          <div class="big" id="defOut">$0.00</div>
-        </div>
-        <div class="card" id="ratioCard" style="display:none;">
-          <small>Defense vs SNAP</small>
-          <div class="big" id="ratioOut">--</div>
-        </div>
+      <div class="totals-card" id="taxCard">
+        <small>Estimated 2024 federal income tax</small>
+        <div class="big" id="totalTaxes">$0.00</div>
+        <small id="taxDetails" style="display:block;margin-top:0.3rem;"></small>
       </div>
-
-      <div class="bar-wrap" aria-label="visual comparison of amounts">
-        <div class="bar-snap" id="snapBar" style="width:20%;"></div>
-        <div class="bar-defense" id="defBar" style="width:80%;"></div>
-      </div>
-      <div class="legend">
-        <span class="snap">SNAP</span>
-        <span class="defense">Defense</span>
-      </div>
+      <div class="result-list" id="resultList"></div>
     </div>
   </div>
 
   <script>
-    function fmt(num) {
-      return "$" + num.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    // categories we decided on
+    const CATEGORIES = [
+      { id: "snap", name: "SNAP & Food Assistance", defaultPct: 2 },
+      { id: "healthcare", name: "Healthcare & Medicaid", defaultPct: 15 },
+      { id: "soldierpay", name: "Pay & Benefits for Soldiers", defaultPct: 5 },
+      { id: "weapons", name: "Weapons & Procurement", defaultPct: 8 },
+      { id: "infra", name: "Infrastructure & Transportation", defaultPct: 3 },
+      { id: "justice", name: "Law Enforcement & Justice", defaultPct: 2.5 },
+      { id: "env", name: "Environmental Protection", defaultPct: 1.5 },
+      { id: "foreign", name: "Foreign Aid & Diplomacy", defaultPct: 1 },
+      { id: "debt", name: "Interest on Debt", defaultPct: 13 },
+      { id: "subsidy", name: "Corporate Subsidies", defaultPct: 1.5 }
+    ];
+
+    const IRS_2024 = {
+      single: {
+        deduction: 14600,
+        brackets: [
+          { upto: 11600, rate: 0.10 },
+          { upto: 47150, rate: 0.12 },
+          { upto: 100525, rate: 0.22 },
+          { upto: 191950, rate: 0.24 },
+          { upto: 243725, rate: 0.32 },
+          { upto: 609350, rate: 0.35 },
+          { upto: Infinity, rate: 0.37 }
+        ]
+      },
+      married: {
+        deduction: 29200,
+        brackets: [
+          { upto: 23200, rate: 0.10 },
+          { upto: 94300, rate: 0.12 },
+          { upto: 201050, rate: 0.22 },
+          { upto: 383900, rate: 0.24 },
+          { upto: 487450, rate: 0.32 },
+          { upto: 731200, rate: 0.35 },
+          { upto: Infinity, rate: 0.37 }
+        ]
+      },
+      hoh: {
+        deduction: 21900,
+        brackets: [
+          { upto: 16550, rate: 0.10 },
+          { upto: 63100, rate: 0.12 },
+          { upto: 100500, rate: 0.22 },
+          { upto: 191950, rate: 0.24 },
+          { upto: 243700, rate: 0.32 },
+          { upto: 609350, rate: 0.35 },
+          { upto: Infinity, rate: 0.37 }
+        ]
+      }
+    };
+
+    const categoryList = document.getElementById("categoryList");
+    const catInputs = document.getElementById("catInputs");
+    const resultList = document.getElementById("resultList");
+    const resultsBox = document.getElementById("results");
+
+    CATEGORIES.forEach(cat => {
+      const label = document.createElement("label");
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.value = cat.id;
+      cb.dataset.cat = cat.id;
+      cb.addEventListener("change", onCategoryToggle);
+      label.appendChild(cb);
+      label.append(cat.name);
+      categoryList.appendChild(label);
+    });
+
+    // pre-check a couple
+    ["snap", "soldierpay", "weapons"].forEach(id => {
+      const cb = [...categoryList.querySelectorAll("input[type=checkbox]")].find(c => c.value === id);
+      if (cb) {
+        cb.checked = true;
+        cb.dispatchEvent(new Event("change"));
+      }
+    });
+
+    function onCategoryToggle(e) {
+      const id = e.target.dataset.cat;
+      const cat = CATEGORIES.find(c => c.id === id);
+      if (!cat) return;
+      if (e.target.checked) {
+        const box = document.createElement("div");
+        box.className = "cat-box";
+        box.id = "box-" + id;
+        box.innerHTML = `
+          <label for="pct-${id}">${cat.name}</label>
+          <input type="number" id="pct-${id}" value="${cat.defaultPct}" min="0" max="100" step="0.1" />
+          <small>Percent of federal budget to map to this.</small>
+        `;
+        catInputs.appendChild(box);
+      } else {
+        const box = document.getElementById("box-" + id);
+        if (box) box.remove();
+      }
     }
 
-    function calc() {
+    function computeTax(income, status) {
+      const cfg = IRS_2024[status] || IRS_2024.single;
+      const taxable = Math.max(0, income - cfg.deduction);
+      let remaining = taxable;
+      let lastCap = 0;
+      let tax = 0;
+      cfg.brackets.forEach(br => {
+        if (remaining <= 0) return;
+        const span = Math.min(remaining, br.upto - lastCap);
+        tax += span * br.rate;
+        remaining -= span;
+        lastCap = br.upto;
+      });
+      return { tax, taxable, deduction: cfg.deduction };
+    }
+
+    function fmtDollar(num) {
+      return "$" + num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function calculate() {
       const income = Number(document.getElementById("income").value) || 0;
-      const effRate = Number(document.getElementById("effRate").value) || 0;
-      const snapSharePct = Number(document.getElementById("snapShare").value) || 0;
-      const defSharePct = Number(document.getElementById("defShare").value) || 0;
+      const status = document.getElementById("status").value;
+      const { tax, taxable, deduction } = computeTax(income, status);
 
-      // estimated federal taxes paid
-      const taxes = income * (effRate / 100);
-      const snapAmt = taxes * (snapSharePct / 100);
-      const defAmt = taxes * (defSharePct / 100);
+      document.getElementById("totalTaxes").textContent = fmtDollar(tax);
+      document.getElementById("taxDetails").textContent =
+        `Gross: ${fmtDollar(income)} – Standard deduction: ${fmtDollar(deduction)} = Taxable: ${fmtDollar(taxable)}`;
 
-      document.getElementById("taxesOut").textContent = fmt(taxes);
-      document.getElementById("snapOut").textContent = fmt(snapAmt);
-      document.getElementById("defOut").textContent = fmt(defAmt);
+      const selected = [];
+      CATEGORIES.forEach(cat => {
+        const cb = categoryList.querySelector(`input[value="${cat.id}"]`);
+        if (cb && cb.checked) {
+          const pct = Number(document.getElementById("pct-" + cat.id).value) || 0;
+          selected.push({ ...cat, pct });
+        }
+      });
 
-      // ratio
-      const ratioCard = document.getElementById("ratioCard");
-      if (snapAmt > 0) {
-        const ratio = defAmt / snapAmt;
-        document.getElementById("ratioOut").textContent = ratio.toFixed(1) + "x";
-        ratioCard.style.display = "block";
-      } else {
-        ratioCard.style.display = "none";
+      resultList.innerHTML = "";
+      if (selected.length === 0) {
+        resultsBox.style.display = "block";
+        resultList.innerHTML = "<p style='color:#94a3b8'>Select at least one category above.</p>";
+        return;
       }
 
-      // bar widths: normalize to max of the two
-      const maxVal = Math.max(snapAmt, defAmt, 1); // avoid 0
-      const snapWidth = (snapAmt / maxVal) * 100;
-      const defWidth = (defAmt / maxVal) * 100;
-      document.getElementById("snapBar").style.width = snapWidth + "%";
-      document.getElementById("defBar").style.width = defWidth + "%";
+      const amounts = selected.map(s => tax * (s.pct / 100));
+      const maxAmount = Math.max(...amounts, 1);
 
-      document.getElementById("results").style.display = "block";
+      selected.forEach((cat, idx) => {
+        const amount = tax * (cat.pct / 100);
+        const width = (amount / maxAmount) * 100;
+        const item = document.createElement("div");
+        item.className = "result-item";
+        item.innerHTML = `
+          <div class="name">${cat.name}</div>
+          <small>${cat.pct}% of your estimated federal income tax</small>
+          <div style="margin-top:0.25rem;font-weight:600;">${fmtDollar(amount)}</div>
+          <div class="bar"><div class="bar-fill" style="width:${width}%;"></div></div>
+        `;
+        resultList.appendChild(item);
+      });
+
+      resultsBox.style.display = "block";
     }
 
-    document.getElementById("calcBtn").addEventListener("click", calc);
-
-    // run once on load
-    calc();
+    document.getElementById("calcBtn").addEventListener("click", calculate);
+    calculate();
   </script>
 </body>
 </html>
